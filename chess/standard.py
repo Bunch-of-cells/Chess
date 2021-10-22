@@ -7,6 +7,7 @@ import pprint
 from abc import ABC, abstractmethod
 from threading import Thread
 from time import sleep
+from copy import deepcopy
 
 
 class Piece(ABC):
@@ -143,7 +144,7 @@ class Piece(ABC):
             moves.append(self.pos[0]+m)
             m = str(int(m)-1)
         return moves
-       
+
 
 class IllegalMoveError(Exception):
     """Error raised when an illegal move is played"""
@@ -160,6 +161,7 @@ class King(Piece):
     :param color: color of the piece
     """
     type_ = "K"
+    CASTLING = ("g1", "g8", "c1", "c8")
 
     def __init__(self, color:int, position:tuple[int, int]=()) -> None:
         if position:
@@ -198,9 +200,9 @@ class King(Piece):
                     moves.append(square)
         castle = self.can_castle()
         if castle[0]:
-            moves.append("g8" if self.color else "g1")
+            moves.append(self.CASTLING[1] if self.color else self.CASTLING[0])
         if castle[1]:
-            moves.append("c8" if self.color else "c1")
+            moves.append(self.CASTLING[3] if self.color else self.CASTLING[2])
         return moves
 
     def can_move(self, move:str) -> bool:
@@ -208,9 +210,9 @@ class King(Piece):
             if self.can_move_straight(move, True) or self.can_move_diagonally(move, True):
                 return True
             castle = self.can_castle()
-            if move in ("g1, g8"):
+            if move in self.CASTLING[:2]:
                 return castle[0]
-            elif move in ("c1, c8"):
+            elif move in self.CASTLING[2:]:
                 return castle[1]
 
     def castle(self, piece:Rook) -> None:
@@ -234,15 +236,15 @@ class King(Piece):
         queenside = None
         if self.moved or Square[self.pos].is_attacked():
             return None, None
-        for piece in self.board.pieces:
-            if piece.type == "R" and piece.color == self.color and not piece.moved:
-                if self.castle_route(-1) or self.castle_route(1):
-                    if piece.pos[0] > self.pos[0] and self.k:
-                        kingside = piece
-                        piece.kingside = None
-                    elif self.q:
-                        queenside = piece
-                        piece.queenside = None
+        # for piece in self.board.pieces:
+        #     if piece.type == "R" and piece.color == self.color and not piece.moved:
+        #         if self.castle_route(-1) or self.castle_route(1):
+        #             if piece.pos[0] > self.pos[0] and self.k:
+        #                 kingside = piece
+        #                 piece.kingside = None
+        #             elif self.q:
+        #                 queenside = piece
+        #                 piece.queenside = None
 
         return kingside, queenside
 
@@ -633,23 +635,18 @@ class Board:
             fen = Board.starting_fen
         Piece.board = self
         self.moves:list[str] = []
-        self.en_passant = None
-        self.clock = Clock(format_)
-        self.pieces:list[Piece] = []
-        self.wking:King = None
-        self.bking:King = None
-        self.turn = 0
-        self.half_moves = 0
-        self.full_moves = 1
-        self.prev = []
+        self.prev = None
         self.move_fen:list[str] = []
         self.printer = pprint.PrettyPrinter(indent=4).pprint
         self.make_board(fen)
-        self.clock = Clock(format, self.turn)
+        self.clock = Clock(format_, self.turn)
         if (msg := self.is_over()):
             raise ValueError(msg)
 
     def make_board(self, fen:str) -> None:
+        self.pieces:list[Piece] = []
+        self.wking:King = None
+        self.bking:King = None
         self.board = [[Square((i, j)) for i in range(8)] for j in range(8)]
         current = [0, 0]
         parts = fen.split()
@@ -786,6 +783,8 @@ class Board:
         return self.board[int(index[1])-1][ord(index[0])-97]
 
     def __setitem__(self, index:str, value:Piece) -> None:
+        if self.board[int(index[1])-1][ord(index[0])-97].piece is not None:
+            raise ValueError("Already a piece there")
         self.board[int(index[1])-1][ord(index[0])-97].piece = value
 
     def __delitem__(self, index:str) -> None:
@@ -832,40 +831,14 @@ class Board:
     def reverse(self) -> None:
         if not self.prev:
             raise IllegalMoveError(msg="No move has been played")
-        fen, self.board, self.pieces = self.prev
-        parts = fen.split()
-        self.turn = 0 if parts[1] == "w" else 1
-        self.en_passant = None if parts[3] == "-" else parts[3]
-        self.half_moves = int(parts[4])
-        self.full_moves = int(parts[5])
-        self.wking.q = False
-        self.wking.k = False
-        self.bking.q = False
-        self.bking.k = False
-
-        if parts[2] == "-":
-            self.wking.moved = True
-            self.bking.moved = True
-        else:
-            for string in parts[2]:
-                if string == "K":
-                    self.wking.q = True
-                elif string == "Q":
-                    self.wking.k = True
-                elif string == "k":
-                    self.bking.k = True
-                elif string == "q":
-                    self.bking.q = True
+        self.make_board(self.prev)
+        self.prev = None
 
     def play(self, move:str) -> None:
         if not move in self.filter_checks(self.get_moves()):
             raise IllegalMoveError(msg="Illegal move")
-        b = self.board
-        p = self.pieces
         piece = self[move[:2]].piece
-        fen = self.generate_fen()
-        self.move_fen.append(fen.split()[0])
-        self.prev = [fen, b, p]
+        self.move_fen.append(self.generate_piece_fen())
         before = self.en_passant
         self.half_moves += 1
         piece.move(move[2:])
@@ -977,16 +950,12 @@ class Board:
         return wins, bins, draw
 
     def old_play(self, move:str) -> None:
-        piece = self[move[:2]].piece
-        self.prev = [self.generate_fen(), self.board, self.pieces]
         before = self.en_passant
-        self.half_moves += 1
-        piece.move(move[2:])
+        prev = self.generate_fen()
+        self[move[:2]].piece.move(move[2:])
         self.turn = int(not self.turn)
         if before and self.en_passant == before:
             self.en_passant = None
-        if piece.color:
-            self.full_moves += 1
 
     def resign(self, color:int) -> None:
         raise ValueError(f"Resignation by {color}")
