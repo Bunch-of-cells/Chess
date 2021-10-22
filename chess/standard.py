@@ -641,7 +641,7 @@ class Board:
         self.turn = 0
         self.half_moves = 0
         self.full_moves = 1
-        self.prev_fen = None
+        self.prev = []
         self.move_fen:list[str] = []
         self.printer = pprint.PrettyPrinter(indent=4).pprint
         self.make_board(fen)
@@ -830,20 +830,42 @@ class Board:
         return filtered
 
     def reverse(self) -> None:
-        if not self.prev_fen:
+        if not self.prev:
             raise IllegalMoveError(msg="No move has been played")
-        self.pieces = []
-        self.wking = None
-        self.bking = None
-        self.make_board(self.prev_fen)
-        self.prev_fen = None
+        fen, self.board, self.pieces = self.prev
+        parts = fen.split()
+        self.turn = 0 if parts[1] == "w" else 1
+        self.en_passant = None if parts[3] == "-" else parts[3]
+        self.half_moves = int(parts[4])
+        self.full_moves = int(parts[5])
+        self.wking.q = False
+        self.wking.k = False
+        self.bking.q = False
+        self.bking.k = False
+
+        if parts[2] == "-":
+            self.wking.moved = True
+            self.bking.moved = True
+        else:
+            for string in parts[2]:
+                if string == "K":
+                    self.wking.q = True
+                elif string == "Q":
+                    self.wking.k = True
+                elif string == "k":
+                    self.bking.k = True
+                elif string == "q":
+                    self.bking.q = True
 
     def play(self, move:str) -> None:
         if not move in self.filter_checks(self.get_moves()):
             raise IllegalMoveError(msg="Illegal move")
+        b = self.board
+        p = self.pieces
         piece = self[move[:2]].piece
-        self.prev_fen = self.generate_fen()
-        self.move_fen.append(self.prev_fen.split()[0])
+        fen = self.generate_fen()
+        self.move_fen.append(fen.split()[0])
+        self.prev = [fen, b, p]
         before = self.en_passant
         self.half_moves += 1
         piece.move(move[2:])
@@ -956,7 +978,7 @@ class Board:
 
     def old_play(self, move:str) -> None:
         piece = self[move[:2]].piece
-        self.prev_fen = self.generate_fen()
+        self.prev = [self.generate_fen(), self.board, self.pieces]
         before = self.en_passant
         self.half_moves += 1
         piece.move(move[2:])
