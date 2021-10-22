@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import Counter
 import pprint
 from abc import ABC, abstractmethod
+from threading import Thread
+from time import sleep
 
 
 class Piece(ABC):
@@ -578,7 +580,7 @@ class Square(metaclass=SquareMeta):
 
 
 class Clock:
-    def __init__(self, format:str, turn:int=0) -> None:
+    def __init__(self, format:str, turn:int=0, sleep:float=0.1) -> None:
         time = format.split("+")
         self.turn = turn
         self.increment = 0
@@ -596,22 +598,28 @@ class Clock:
                 self.delay = int(z)
             case x:
                 raise ValueError(f"Wrong Time format: '{x}'")
-        self.white = self.initial
-        self.black = self.initial
+        self.white = self.initial*10
+        self.black = self.initial*10
+        self.sleep = sleep
 
-    async def tick(self) -> None:
-        pass
-        # if self.ticking:
-        #     sleep()
+    def tick(self, turn:int) -> None:
+        attr = "white" if turn == 0 else "black"
+        while self.ticking:
+            sleep(self.sleep)
+            setattr(self, attr, getattr(self, attr)+self.sleep*10)
 
     def __call__(self) -> None:
-        pass
+        self.ticking = False
+        sleep(self.sleep)
+        self.ticking = True
+        self.turn = int(not self.turn)
+        Thread(target=self.tick, args=(self.turn, )).start()
 
     def end(self) -> None:
         self.ticking = False
 
     def time(self) -> tuple[float, float]:
-        return self.white, self.black
+        return self.white/10, self.black/10
 
     def is_up(self) -> bool:
         return any(self.time() <= 0)
