@@ -588,34 +588,44 @@ class Clock:
         self.increment = 0
         self.delay = 0
         self.ticking = False
+
         match time:
             case [x]:
-                self.initial = int(x)
+                self.initial = int(x)*600
             case [x, y]:
-                self.initial = int(x)
-                self.increment = int(y)
+                self.initial = int(x)*600
+                self.increment = int(y)*10
             case [x, y, z]:
-                self.initial = int(x)
-                self.increment = int(y)
-                self.delay = int(z)
+                self.initial = int(x)*600
+                self.increment = int(y)*10
+                self.delay = int(z)*10
             case x:
                 raise ValueError(f"Wrong Time format: '{x}'")
-        self.white = self.initial*10
-        self.black = self.initial*10
+        self.white = self.initial
+        self.black = self.initial
         self.sleep = sleep
 
-    def tick(self, turn:int) -> None:
-        attr = "white" if turn == 0 else "black"
+    def tick(self, attr:str) -> None:
+        delay = 0
+        while delay < self.delay:
+            sleep(self.sleep)
+            delay += self.sleep*10
+
         while self.ticking:
             sleep(self.sleep)
-            setattr(self, attr, getattr(self, attr)+self.sleep*10)
+            setattr(self, attr, getattr(self, attr)-self.sleep*10)
+            if getattr(self, attr) <= 0:
+                break
+
+        setattr(self, attr, getattr(self, attr)+self.increment)
 
     def __call__(self) -> None:
+        attr = "white" if self.turn == 0 else "black"
         self.ticking = False
         sleep(self.sleep)
         self.ticking = True
         self.turn = int(not self.turn)
-        Thread(target=self.tick, args=(self.turn, )).start()
+        Thread(target=self.tick, args=(attr,)).start()
 
     def stop(self) -> None:
         self.ticking = False
@@ -624,7 +634,7 @@ class Clock:
         return self.white/10, self.black/10
 
     def is_up(self) -> bool:
-        return any(self.time() <= 0)
+        return any(player <= 0 for player in self.time())
 
 
 class Board:
@@ -951,7 +961,7 @@ class Board:
 
     def old_play(self, move:str) -> None:
         before = self.en_passant
-        prev = self.generate_fen()
+        self.prev = self.generate_fen()
         self[move[:2]].piece.move(move[2:])
         self.turn = int(not self.turn)
         if before and self.en_passant == before:
