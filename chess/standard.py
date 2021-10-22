@@ -580,8 +580,8 @@ class Square(metaclass=SquareMeta):
 
 
 class Clock:
-    def __init__(self, format:str, turn:int=0, sleep:float=0.1) -> None:
-        time = format.split("+")
+    def __init__(self, format_:str, turn:int=0, sleep:float=0.1) -> None:
+        time = format_.split("+")
         self.turn = turn
         self.increment = 0
         self.delay = 0
@@ -628,12 +628,13 @@ class Clock:
 class Board:
     starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-    def __init__(self, fen:str="", format:str="5+0") -> None:
+    def __init__(self, fen:str="", format_:str="5+0") -> None:
         if not fen:
             fen = Board.starting_fen
         Piece.board = self
         self.moves:list[str] = []
         self.en_passant = None
+        self.clock = Clock(format_)
         self.pieces:list[Piece] = []
         self.wking:King = None
         self.bking:King = None
@@ -853,6 +854,7 @@ class Board:
         print(f"{self.full_moves}. {move}")
         if piece.color:
             self.full_moves += 1
+        self.clock()
         self.print_board()
         error = self.is_over()
         if error:
