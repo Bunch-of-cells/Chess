@@ -615,7 +615,7 @@ class Clock:
         self.turn = int(not self.turn)
         Thread(target=self.tick, args=(self.turn, )).start()
 
-    def end(self) -> None:
+    def stop(self) -> None:
         self.ticking = False
 
     def time(self) -> tuple[float, float]:
@@ -856,8 +856,10 @@ class Board:
             self.full_moves += 1
         self.clock()
         self.print_board()
+        print(self.clock.time())
         error = self.is_over()
         if error:
+            self.clock.stop()
             raise ValueError(error)
 
     def is_over(self) -> str:
@@ -868,6 +870,10 @@ class Board:
             return "Checkmate"
         if self.half_moves >= 100:
             return "Draw by 50 move rule"
+        if self.clock.is_up():
+            if self.is_insufficient_material()[self.turn]:
+                return "Draw by Time out"
+            return "Time out!"
         if 3 in Counter(self.move_fen).values():
             return "Threefold repetition"
         if self.is_insufficient_material()[2]:
