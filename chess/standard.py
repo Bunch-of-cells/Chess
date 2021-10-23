@@ -1175,4 +1175,4 @@ def generate_chess960_pieces() -> str:
             and ( p.index('r') < p.index('K') < p.index('R')	# King constraint	
             or p.index('R') < p.index('K') < p.index('r') )}
     pieces = starts.pop()
-    return pieces.lower() + "/pppppppp/8/8/8/8/PPPPPPPP/" + pieces.upper()
+    return pieces.lower() + "/pppppppp/8/8/8/8/PPPPPPPP/" + pieces
