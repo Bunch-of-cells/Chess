@@ -12,9 +12,9 @@ from time import sleep
 class Piece(ABC):
     """A chess piece
 
-        Args:
-            color (int): Color of the piece (0 for white, 1 for black)
-            pos (str): position of the piece
+    Args:
+        color (int): Color of the piece (0 for white, 1 for black)
+        pos (str): position of the piece
     """
 
     type_:str = ""
@@ -65,9 +65,9 @@ class Piece(ABC):
 
         Args:
             move (str): The square
-            one (bool): if the piece can only move 1 square (defaults to False)
+            one (bool): if the piece can only move 1 square. Defaults to False.
             dir_ (bool|None): if the piece can only move forward 1 square in the given 
-            direction (defaults to None)
+            direction. Defaults to False.
 
         Returns:
             bool: If the piece can move diagonally to that square
@@ -98,7 +98,7 @@ class Piece(ABC):
 
         Args:
             move (str): The square
-            one (bool): if the piece can only move 1 square (defaults to False)
+            one (bool): if the piece can only move 1 square. Defaults to False.
 
         Returns:
             bool: If the piece can move straight to that square
@@ -126,8 +126,8 @@ class Piece(ABC):
 
         Args:
             move (str): The square
-            opponent (bool): returns True if square is occupied by an opponent piece
-            (defaults to False)
+            opponent (bool): returns True if square is occupied by an opponent piece.
+            Defaults to False.
 
         Returns:
             bool: If the square is occupied
@@ -205,18 +205,18 @@ class IllegalMoveError(Exception):
 
 
 class King(Piece):
-    """
-    King Piece
-    :param color: color of the piece
+    """King piece
+
+    Args:
+        color (int): color of the piece
+        position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "K"
     CASTLING = ("g1", "g8", "c1", "c8")
+    CASTLED_ROOK = ("f1", "f8", "d1", "d8")
 
-    def __init__(self, color:int, position:tuple[int, int]=()) -> None:
-        if position:
-            pos = f"{chr(position[0]+97)}{position[1]+1}"
-        else:
-            pos = "e8" if color else "e1"
+    def __init__(self, color:int, position:tuple[int, int]) -> None:
+        pos = f"{chr(position[0]+97)}{position[1]+1}"
         if (pos[1] == "1" and not color) or (pos[1] == "8" and color):
             self.moved = False
         else:
@@ -265,22 +265,28 @@ class King(Piece):
                 return castle[1]
 
     def castle(self, piece:Rook) -> None:
+        """Castles the king"""
         if hasattr(piece, "kingside"):
             if self.color:
-                piece.move("f8")
+                piece.move(self.CASTLED_ROOK[1])
             else:
-                piece.move("f1")
+                piece.move(self.CASTLED_ROOK[0])
             delattr(piece, "kingside")
         elif hasattr(piece, "queenside"):
             if self.color:
-                piece.move("d8")
+                piece.move(self.CASTLED_ROOK[3])
             else:
-                piece.move("d1")
+                piece.move(self.CASTLED_ROOK[2])
             delattr(piece, "queenside")
         else:
             raise Exception(piece.__dict__)
 
     def can_castle(self) -> tuple[None|Rook, None|Rook]:
+        """Checks if the king can castle or not
+
+        Returns:
+            tuple[None|Rook, None|Rook]: A tuple of rooks which can castle with the king
+        """
         kingside = None
         queenside = None
         if self.moved or Square[self.pos].is_attacked():
@@ -298,6 +304,14 @@ class King(Piece):
         return kingside, queenside
 
     def castle_route(self, side:int) -> bool:
+        """Checks if the path is clear and checkless for castling
+
+        Args:
+            side (int): side the king wants to castle, 1 or -1
+
+        Returns:
+            bool: If the king can castle or not
+        """
         move = chr(ord(self.pos[0])+side)
         if self.is_available(move+self.pos[1]):
             return False
@@ -311,10 +325,11 @@ class King(Piece):
 
 
 class Rook(Piece):
-    """
-    Rook Piece
-    :param color: color of the piece
-    :param position: position of the rook
+    """Rook piece
+
+    Args:
+        color (int): color of the piece
+        position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "R"
 
@@ -348,10 +363,11 @@ class Rook(Piece):
 
 
 class Bishop(Piece):
-    """
-    Bishop Piece
-    :param color: color of the piece
-    :param position: position of the bishop
+    """Bishop piece
+
+    Args:
+        color (int): color of the piece
+        position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "B"
 
@@ -379,9 +395,11 @@ class Bishop(Piece):
 
 
 class Queen(Piece):
-    """
-    Queen Piece
-    :param color: color of the piece
+    """Queen piece
+
+    Args:
+        color (int): color of the piece
+        position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "Q"
 
@@ -412,10 +430,11 @@ class Queen(Piece):
 
 
 class Knight(Piece):
-    """
-    Knight Piece
-    :param color: color of the piece
-    :param position: position of the knight
+    """Knight piece
+
+    Args:
+        color (int): color of the piece
+        position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "N"
 
@@ -453,10 +472,11 @@ class Knight(Piece):
 
 
 class Pawn(Piece):
-    """
-    A pawn
-    :param color: color of the pawn
-    :param position: position of the pawn
+    """a Pawn
+
+    Args:
+        color (int): color of the piece
+        position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "P"
 
@@ -602,6 +622,7 @@ class Pawn(Piece):
 
 
 class SquareMeta(type):
+    """Metaclass for the square class"""
     squares = {}
     def __call__(cls, pos):
         obj = super().__call__(pos)
@@ -613,6 +634,11 @@ class SquareMeta(type):
 
 
 class Square(metaclass=SquareMeta):
+    """A Square
+
+    Args:
+        pos (tuple[int, int]): A numeric form of the position of the square
+    """
     def __init__(self, pos:tuple[int, int]) -> None:
         self.pos = pos
         self.piece:Piece = None
@@ -621,9 +647,10 @@ class Square(metaclass=SquareMeta):
         return str(self.piece or " ")
 
     def is_attacked(self) -> bool:
+        """Returns a bool if the square is attacked by an enemy piece"""
         for piece in Piece.board.pieces:
             if (piece.color != self.piece.color
-                and piece.type != self.piece.type
+                and piece.type != self.piece.type  # Important idk why to avoid recursion
                 and piece.can_move(self.piece.pos)
             ):
                     return True
@@ -631,6 +658,18 @@ class Square(metaclass=SquareMeta):
 
 
 class Clock:
+    """A chess Clock
+
+    Args:
+        format_ (str): Time format. TIME+INCREMENT+DELAY
+        turn (int, optional): Which player has to move. 0 for white and 1 for black.
+        Defaults to 0.
+        sleep (float, optional): Time between each clock loop. Used to lower the cpu load.
+        Defaults to 0.1.
+
+    Raises:
+        ValueError: When a wrong format is passed
+    """
     def __init__(self, format_:str, turn:int=0, sleep:float=0.1) -> None:
         time = format_.split("+")
         self.turn = turn
@@ -655,17 +694,25 @@ class Clock:
         self.sleep = sleep
 
     def tick(self, attr:str) -> None:
+        """Ticks the clock
+
+        Args:
+            attr (str): Player to move
+        """
+        # Wait for the delay
         delay = 0
-        while delay < self.delay:
+        while self.ticking and delay < self.delay:
             sleep(self.sleep)
             delay += self.sleep*10
 
+        # Decrement the clock as time passes
         while self.ticking:
             sleep(self.sleep)
             setattr(self, attr, getattr(self, attr)-self.sleep*10)
             if getattr(self, attr) <= 0:
                 break
 
+        # Increment after every move
         setattr(self, attr, getattr(self, attr)+self.increment)
 
     def __call__(self) -> None:
@@ -677,12 +724,15 @@ class Clock:
         Thread(target=self.tick, args=(attr,)).start()
 
     def stop(self) -> None:
+        """Stops the clock"""
         self.ticking = False
 
     def time(self) -> tuple[float, float]:
+        """Returns the time left for both players"""
         return self.white/10, self.black/10
 
     def is_up(self) -> bool:
+        """Returns a bool if any of the players' time is up"""
         return any(player <= 0 for player in self.time())
 
 
@@ -1027,6 +1077,14 @@ class Board:
 
 
 def check_UCI(move:str) -> bool:
+    """Checks if the move is correct or not
+
+    Args:
+        move (str): The move to check
+
+    Returns:
+        bool: if the move is according to UCI notation or not
+    """
     if len(move) == 4:
         if move[0] in "abcdefgh" and move[2] in "abcdefgh":
             return move[1] in "12345678" and move[3] in "12345678"
