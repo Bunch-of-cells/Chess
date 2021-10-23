@@ -24,6 +24,8 @@ class Board(std.Board):
         fen (str, optional): starting FEN. Defaults to the standard starting FEN.
         format_ (str, optional): Time format. Defaults to "5+0".
     """
+    starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 +0+0"
+
     def filter_checks(self, moves:list[str]) -> list[str]:
         """Filters the moves to remove checks
 
@@ -70,4 +72,17 @@ class Board(std.Board):
             print(msg)
             exit()
 
+    def make_board(self, fen:str) -> None:
+        """Makes the board
 
+        Args:
+            fen (str): FEN for the board
+
+        Raises:
+            ValueError: if the fen is invalid
+        """
+        parts = fen.split()
+        checks = parts.pop()
+        super().make_board(fen)
+        self.bking.lives = int(checks[1])
+        self.wking.lives = int(checks[3])

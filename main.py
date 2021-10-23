@@ -1,4 +1,4 @@
-from chess import standard as std
+from chess import standard as std, three_check as tc
 
 
 def main() -> None:
