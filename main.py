@@ -2,7 +2,7 @@ from chess import standard as std
 
 
 def main() -> None:
-    b = std.Board("8/3k4/8/8/5n2/6B1/2K5/8 w - - 0 1", "0.05+0")
+    b = std.Board(std.generate_chess960_pieces() + " w - - 0 1", "0.05+0")
 
     while True:
         m = input("::>><<:: ")

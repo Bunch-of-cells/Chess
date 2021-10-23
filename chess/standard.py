@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 import pprint
+from itertools import permutations
 from abc import ABC, abstractmethod
 from threading import Thread
 from time import sleep
@@ -314,14 +315,18 @@ class King(Piece):
         """
 
         if rook[0] > self.pos[0] and self.k:
-            if (self.is_occupied(self.CASTLING[self.color])
-                or self.is_occupied(self.CASTLED_ROOK[self.color])
+            if ((self.is_occupied(self.CASTLING[self.color])
+                and self.pos != self.CASTLING[self.color])
+                or (self.is_occupied(self.CASTLED_ROOK[self.color])
+                and rook != self.CASTLED_ROOK[self.color])
             ):
                 return False
             side = 1
         elif self.q:
-            if(self.is_occupied(self.CASTLING[self.color+2])
-                or self.is_occupied(self.CASTLED_ROOK[self.color+2])
+            if((self.is_occupied(self.CASTLING[self.color+2])
+                and self.pos != self.CASTLING[self.color+2])
+                or (self.is_occupied(self.CASTLED_ROOK[self.color+2])
+                and rook != self.CASTLED_ROOK[self.color+2])
             ):
                 return False
             side = -1
@@ -1161,3 +1166,13 @@ def check_UCI(move:str) -> bool:
         if move[0] in "abcdefgh" and move[2] in "abcdefgh":
             return move[1] in "27" and move[3] in "18" and move[4] in "qrnb"
     return False
+
+
+def generate_chess960_pieces() -> str:
+    pieces = 'KQRrBbNN'
+    starts = {''.join(p).upper() for p in permutations(pieces)
+            if p.index('B') % 2 != p.index('b') % 2 		# Bishop constraint
+            and ( p.index('r') < p.index('K') < p.index('R')	# King constraint	
+            or p.index('R') < p.index('K') < p.index('r') )}
+    pieces = starts.pop()
+    return pieces.lower() + "/pppppppp/8/8/8/8/PPPPPPPP/" + pieces.upper()
