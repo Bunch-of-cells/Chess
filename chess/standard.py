@@ -676,15 +676,16 @@ class Clock:
         self.increment = 0
         self.delay = 0
         self.ticking = False
+        self.other = False
 
         match time:
             case [x]:
-                self.initial = int(x)*600
+                self.initial = int(float(x)*600)
             case [x, y]:
-                self.initial = int(x)*600
+                self.initial = int(float(x)*600)
                 self.increment = int(y)*10
             case [x, y, z]:
-                self.initial = int(x)*600
+                self.initial = int(float(x)*600)
                 self.increment = int(y)*10
                 self.delay = int(z)*10
             case x:
@@ -718,11 +719,14 @@ class Clock:
 
     def __call__(self) -> None:
         attr = "white" if self.turn == 0 else "black"
-        self.ticking = False
-        sleep(self.sleep)
-        self.ticking = True
         self.turn = int(not self.turn)
-        Thread(target=self.tick, args=(attr,)).start()
+        if not self.other:
+            self.other = True
+        else:
+            self.ticking = False
+            sleep(self.sleep)
+            self.ticking = True
+            Thread(target=self.tick, args=(attr,)).start()
 
     def stop(self) -> None:
         """Stops the clock"""
