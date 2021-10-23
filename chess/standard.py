@@ -737,6 +737,16 @@ class Clock:
 
 
 class Board:
+    """The Chess Board
+
+    Args:
+        fen (str, optional): starting FEN. Defaults to the standard starting FEN.
+        format_ (str, optional): Time format. Defaults to "5+0".
+
+    Raises:
+        ValueError: [description]
+    """
+
     starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
     def __init__(self, fen:str="", format_:str="5+0") -> None:
@@ -753,6 +763,14 @@ class Board:
             raise ValueError(msg)
 
     def make_board(self, fen:str) -> None:
+        """Makes the board
+
+        Args:
+            fen (str): FEN for the board
+
+        Raises:
+            ValueError: if the fen is invalid
+        """
         self.pieces:list[Piece] = []
         self.wking:King = None
         self.bking:King = None
@@ -833,6 +851,7 @@ class Board:
                         raise ValueError("Illegal FEN")
 
     def castling(self) -> str:
+        """Returns the castling rights for FEN generation"""
         wking = False
         wqueen = False
         bking = False
@@ -868,6 +887,7 @@ class Board:
         return fen
 
     def generate_piece_fen(self) -> str:
+        """Returns the pieces for fen generation."""
         fen = ""
         empty = 0
         for rank in self.board[::-1]:
@@ -886,6 +906,7 @@ class Board:
         return fen[:-1]
 
     def print_board(self) -> None:
+        """Prints the board"""
         self.printer(self.board[::-1])
 
     def __getitem__(self, index:str) -> Square:
@@ -907,6 +928,14 @@ class Board:
         return str(self.board)
 
     def can_play(self, move:str) -> bool:
+        """Checks if the move can be played
+
+        Args:
+            move (str): The move
+
+        Returns:
+            bool: if the move can be played
+        """
         if not check_UCI(move):
             return False
         piece = self[move[:2]].piece
@@ -920,6 +949,7 @@ class Board:
         return False
 
     def get_moves(self) -> list[str]:
+        """Gets a list of all the moves without filtering checks"""
         moves = []
         for piece in self.pieces:
             if piece.color == self.turn:
@@ -927,9 +957,17 @@ class Board:
         return moves
 
     def filter_checks(self, moves:list[str]) -> list[str]:
+        """Filters the moves to remove checks
+
+        Args:
+            moves (list[str]): List of moves
+
+        Returns:
+            list[str]: Filtered list of moves
+        """
         filtered = []
         for move in moves:
-            self.old_play(move)
+            self._old_play(move)
             if Square[self.wking.pos].is_attacked() or Square[self.bking.pos].is_attacked():
                 pass
             else:
@@ -938,12 +976,22 @@ class Board:
         return filtered
 
     def reverse(self) -> None:
+        """Reverses a played move"""
         if not self.prev:
             raise IllegalMoveError(msg="No move has been played")
         self.make_board(self.prev)
         self.prev = None
 
     def play(self, move:str) -> None:
+        """Play the given move
+
+        Args:
+            move (str): The move to play
+
+        Raises:
+            IllegalMoveError: If the move is Illegal
+            ValueError: If the game is over
+        """
         if not move in self.filter_checks(self.get_moves()):
             raise IllegalMoveError(msg="Illegal move")
         piece = self[move[:2]].piece
@@ -967,6 +1015,11 @@ class Board:
             raise ValueError(error)
 
     def is_over(self) -> str:
+        """Checks if the game is over
+
+        Returns:
+            str: Game over message
+        """
         moves = self.get_moves()
         if not moves:
             return "Stalemate"
@@ -1058,7 +1111,7 @@ class Board:
             return False if wb else wins, False, False
         return wins, bins, draw
 
-    def old_play(self, move:str) -> None:
+    def _old_play(self, move:str) -> None:
         before = self.en_passant
         self.prev = self.generate_fen()
         self[move[:2]].piece.move(move[2:])
@@ -1067,12 +1120,15 @@ class Board:
             self.en_passant = None
 
     def resign(self, color:int) -> None:
+        """Resign the game"""
         raise ValueError(f"Resignation by {color}")
 
     def draw(self) -> None:
+        """Draw the game"""
         raise ValueError("Draw on agreement")
 
     def abort(self) -> None:
+        """Abort the game"""
         raise ValueError("Aborted")
 
 
