@@ -3,7 +3,7 @@ from chess import standard as std, three_check as tc
 
 def main() -> None:
     # b = std.Board(std.generate_chess960_pieces() + " w - - 0 1", "0.05+0")
-    b = std.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1")
+    b = tc.Board("r1rnbbqn/1Q1pppp1/p1pk4/7p/5P2/P5P1/1PPPP2P/RKRNBB1N w KQ - 1 6 +2+0")
 
     while True:
         m = input("::>><<:: ")

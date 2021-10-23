@@ -322,17 +322,17 @@ class King(Piece):
             return False
 
         far1 = ord(min(rook[0], self.pos[0],
-                self.CASTLING[self.color+side], self.CASTLED_ROOK[self.color+side]))
+                self.CASTLING[self.color+side][0], self.CASTLED_ROOK[self.color+side][0]))
         far2 = ord(max(rook[0], self.pos[0],
-                self.CASTLING[self.color+side], self.CASTLED_ROOK[self.color+side]))
+                self.CASTLING[self.color+side][0], self.CASTLED_ROOK[self.color+side][0]))
 
         for file in range(far1, far2):
             if Square[chr(file)+self.pos[1]].piece is not None:
                 if chr(file) not in (rook[0], self.pos[0]):
                         return False
-            if Square[f'{chr(file)}{self.pos[1]}'].is_attacked():
-                if (ord(self.pos[0]) <= chr(file) <= self.CASTLING[self.color+side]
-                    or ord(self.pos[0]) >= chr(file) >= self.CASTLING[self.color+side]):
+            if Square[f'{chr(file)}{self.pos[1]}'].is_attacked(self.color):
+                if (ord(self.pos[0]) <= file <= self.CASTLING[self.color+side]
+                    or ord(self.pos[0]) >= file >= self.CASTLING[self.color+side]):
                     return False
         return True
 
@@ -659,14 +659,14 @@ class Square(metaclass=SquareMeta):
     def __repr__(self) -> str:
         return str(self.piece or " ")
 
-    def is_attacked(self) -> bool:
+    def is_attacked(self, color:int=None) -> bool:
         """Returns a bool if the square is attacked by an enemy piece"""
         for piece in Piece.board.pieces:
-            if (piece.color != self.piece.color
-                and piece.type != self.piece.type  # Important idk why to avoid recursion
-                and piece.can_move(self.piece.pos)
+            if (piece.color != (self.piece.color if self.piece else color)
+                and piece.type != "K"  # Important idk why to avoid recursion
+                and piece.can_move(f"{chr(self.pos[0]+97)}{self.pos[1]+1}")
             ):
-                    return True
+                return True
         return False
 
 
@@ -765,7 +765,7 @@ class Board:
 
     def __init__(self, fen:str="", format_:str="5+0") -> None:
         if not fen:
-            fen = Board.starting_fen
+            fen = self.starting_fen
         Piece.board = self
         self.moves:list[str] = []
         self.prev = None
@@ -781,21 +781,50 @@ class Board:
 
         Args:
             fen (str): FEN for the board
-
-        Raises:
-            ValueError: if the fen is invalid
         """
         self.pieces:list[Piece] = []
         self.wking:King = None
         self.bking:King = None
         self.board = [[Square((i, j)) for i in range(8)] for j in range(8)]
-        current = [0, 0]
         parts = fen.split()
         self.turn = 0 if parts[1] == "w" else 1
         self.en_passant = None if parts[3] == "-" else parts[3]
         self.half_moves = int(parts[4])
         self.full_moves = int(parts[5])
-        for rank in parts[0].split("/")[::-1]:
+        self.make_pieces(parts[0])
+        self.wking.q = False
+        self.wking.k = False
+        self.bking.q = False
+        self.bking.k = False
+
+        if parts[2] == "-":
+            self.wking.moved = True
+            self.bking.moved = True
+        else:
+            for string in parts[2]:
+                match string:
+                    case "K":
+                        self.wking.q = True
+                    case "Q":
+                        self.wking.k = True
+                    case "k":
+                        self.bking.k = True
+                    case "q":
+                        self.bking.q = True
+                    case _:
+                        raise ValueError("Illegal FEN")
+
+    def make_pieces(self, pieces:str) -> None:
+        """Makes the board
+
+        Args:
+            pieces (str): piece fen
+
+        Raises:
+            ValueError: If the passed piece fen is invalid
+        """
+        current = [0, 0]
+        for rank in pieces.split("/")[::-1]:
             for square in rank:
                 if square.isdigit():
                     current[1] += int(square)
@@ -841,28 +870,6 @@ class Board:
 
         if not (self.wking and self.bking):
             raise ValueError("Missing Kings")
-
-        self.wking.q = False
-        self.wking.k = False
-        self.bking.q = False
-        self.bking.k = False
-
-        if parts[2] == "-":
-            self.wking.moved = True
-            self.bking.moved = True
-        else:
-            for string in parts[2]:
-                match string:
-                    case "K":
-                        self.wking.q = True
-                    case "Q":
-                        self.wking.k = True
-                    case "k":
-                        self.bking.k = True
-                    case "q":
-                        self.bking.q = True
-                    case _:
-                        raise ValueError("Illegal FEN")
 
     def castling(self) -> str:
         """Returns the castling rights for FEN generation"""
@@ -982,9 +989,7 @@ class Board:
         filtered = []
         for move in moves:
             self._old_play(move)
-            if Square[self.wking.pos].is_attacked() or Square[self.bking.pos].is_attacked():
-                pass
-            else:
+            if not Square[self.wking.pos if self.turn else self.bking.pos].is_attacked():
                 filtered.append(move)
             self.reverse()
         return filtered
