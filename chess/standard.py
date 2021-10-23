@@ -710,7 +710,8 @@ class Clock:
             sleep(self.sleep)
             setattr(self, attr, getattr(self, attr)-self.sleep*10)
             if getattr(self, attr) <= 0:
-                break
+                self.ticking = False
+                raise ValueError(Piece.board.is_over())
 
         # Increment after every move
         setattr(self, attr, getattr(self, attr)+self.increment)
@@ -1020,6 +1021,10 @@ class Board:
         Returns:
             str: Game over message
         """
+        if self.clock.is_up():
+            if self.is_insufficient_material()[self.turn]:
+                return "Draw by Time out"
+            return "Time out!"
         moves = self.get_moves()
         if not moves:
             return "Stalemate"
@@ -1027,10 +1032,6 @@ class Board:
             return "Checkmate"
         if self.half_moves >= 100:
             return "Draw by 50 move rule"
-        if self.clock.is_up():
-            if self.is_insufficient_material()[self.turn]:
-                return "Draw by Time out"
-            return "Time out!"
         if 3 in Counter(self.move_fen).values():
             return "Threefold repetition"
         if self.is_insufficient_material()[2]:
