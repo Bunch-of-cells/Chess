@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-"""Contains the Board"""
+"""Contains the Board for standard, chess960 and from-position variants"""
 
+from pprint import PrettyPrinter
 from collections import Counter
-import pprint
 from itertools import permutations
 from abc import ABC, abstractmethod
 from threading import Thread
@@ -315,28 +315,25 @@ class King(Piece):
         """
 
         if rook[0] > self.pos[0] and self.k:
-            if ((self.is_occupied(self.CASTLING[self.color])
-                and self.pos != self.CASTLING[self.color])
-                or (self.is_occupied(self.CASTLED_ROOK[self.color])
-                and rook != self.CASTLED_ROOK[self.color])
-            ):
-                return False
-            side = 1
+            side = 0
         elif self.q:
-            if((self.is_occupied(self.CASTLING[self.color+2])
-                and self.pos != self.CASTLING[self.color+2])
-                or (self.is_occupied(self.CASTLED_ROOK[self.color+2])
-                and rook != self.CASTLED_ROOK[self.color+2])
-            ):
-                return False
-            side = -1
+            side = 2
         else:
             return False
 
-        
+        far1 = ord(min(rook[0], self.pos[0],
+                self.CASTLING[self.color+side], self.CASTLED_ROOK[self.color+side]))
+        far2 = ord(max(rook[0], self.pos[0],
+                self.CASTLING[self.color+side], self.CASTLED_ROOK[self.color+side]))
 
-            # if Square[f'{chr(file)}{move[1]}'].is_attacked():
-            #     return False
+        for file in range(far1, far2):
+            if Square[chr(file)+self.pos[1]].piece is not None:
+                if chr(file) not in (rook[0], self.pos[0]):
+                        return False
+            if Square[f'{chr(file)}{self.pos[1]}'].is_attacked():
+                if (ord(self.pos[0]) <= chr(file) <= self.CASTLING[self.color+side]
+                    or ord(self.pos[0]) >= chr(file) >= self.CASTLING[self.color+side]):
+                    return False
         return True
 
 
@@ -773,7 +770,7 @@ class Board:
         self.moves:list[str] = []
         self.prev = None
         self.move_fen:list[str] = []
-        self.printer = pprint.PrettyPrinter(indent=4).pprint
+        self.printer = PrettyPrinter(indent=4).pprint
         self.make_board(fen)
         self.clock = Clock(format_, self.turn)
         if (msg := self.is_over()):
@@ -1028,12 +1025,8 @@ class Board:
         print(self.clock.time())
         self.is_over()
 
-    def is_over(self) -> str:
-        """Checks if the game is over
-
-        Returns:
-            str: Game over message
-        """
+    def is_over(self) -> None:
+        """Ends the game if the game is over"""
         msg = ""
         if self.clock.is_up():
             if self.is_insufficient_material()[self.turn]:
@@ -1042,15 +1035,15 @@ class Board:
         moves = self.get_moves()
         if not moves:
             msg = "Stalemate"
-        if not self.filter_checks(moves):
+        elif not self.filter_checks(moves):
             msg = "Checkmate"
-        if self.half_moves >= 100:
+        elif self.half_moves >= 100:
             msg = "Draw by 50 move rule"
-        if 3 in Counter(self.move_fen).values():
+        elif 3 in Counter(self.move_fen).values():
             msg = "Threefold repetition"
-        if self.is_insufficient_material()[2]:
+        elif self.is_insufficient_material()[2]:
             msg = "Insufficient material"
-        if msg:
+        elif msg:
             self.clock.stop()
             print(msg)
             exit()
