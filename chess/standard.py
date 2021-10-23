@@ -711,8 +711,7 @@ class Clock:
             sleep(self.sleep)
             setattr(self, attr, getattr(self, attr)-self.sleep*10)
             if getattr(self, attr) <= 0:
-                self.ticking = False
-                raise ValueError(Piece.board.is_over())
+                Piece.board.is_over()
 
         # Increment after every move
         setattr(self, attr, getattr(self, attr)+self.increment)
@@ -1014,10 +1013,7 @@ class Board:
         self.clock()
         self.print_board()
         print(self.clock.time())
-        error = self.is_over()
-        if error:
-            self.clock.stop()
-            raise ValueError(error)
+        self.is_over()
 
     def is_over(self) -> str:
         """Checks if the game is over
@@ -1025,22 +1021,26 @@ class Board:
         Returns:
             str: Game over message
         """
+        msg = ""
         if self.clock.is_up():
             if self.is_insufficient_material()[self.turn]:
-                return "Draw by Time out"
-            return "Time out!"
+                msg = "Draw by Time out"
+            msg = "Time out!"
         moves = self.get_moves()
         if not moves:
-            return "Stalemate"
+            msg = "Stalemate"
         if not self.filter_checks(moves):
-            return "Checkmate"
+            msg = "Checkmate"
         if self.half_moves >= 100:
-            return "Draw by 50 move rule"
+            msg = "Draw by 50 move rule"
         if 3 in Counter(self.move_fen).values():
-            return "Threefold repetition"
+            msg = "Threefold repetition"
         if self.is_insufficient_material()[2]:
-            return "Insufficient material"
-        return ""
+            msg = "Insufficient material"
+        if msg:
+            self.clock.stop()
+            print(msg)
+            exit()
 
     def is_insufficient_material(self) -> tuple[bool, bool, bool]:
         """Checks if a player has insufficient material
@@ -1101,7 +1101,7 @@ class Board:
                 draw = True
             elif white[0].type == "N" and not black:
                 draw = True
-            elif white and white[0].type == "B" or black and black[0].type == "B":
+            elif all(p.type == "B" for p in white) and all(p.type == "B" for p in black):
                 draw = True
                 for b, w in zip(black, white):
                     bcolor = (ord(w.pos[0]) %2 == int(w.pos[1]) %2)
