@@ -74,7 +74,7 @@ class Piece(ABC):
         """
 
         cond = abs(ord(self.pos[0]) - ord(move[0])) == abs(int(self.pos[1]) - int(move[1]))
-        if not cond or self.is_available(move):
+        if not cond or self.is_occupied(move):
             return False
         if dir_ is not None:
             if not abs(ord(self.pos[0]) - ord(move[0])) == 1:
@@ -105,7 +105,7 @@ class Piece(ABC):
         """
 
         cond = (move[0] == self.pos[0]) != (move[1] == self.pos[1])
-        if not cond or self.is_available(move):
+        if not cond or self.is_occupied(move):
             return False
         if one:
             cond_a =  abs(ord(self.pos[0]) - ord(move[0])) == 1
@@ -121,7 +121,7 @@ class Piece(ABC):
                 for rank in range(int(self.pos[1])+step, int(move[1]), step))
         return False
 
-    def is_available(self, square:str, opponent:bool=False) -> bool:
+    def is_occupied(self, square:str, opponent:bool=False) -> bool:
         """Checks if the square is occupied by another of your own piece
 
         Args:
@@ -230,7 +230,7 @@ class King(Piece):
             raise IllegalMoveError(self, move)
         if isinstance(castle, Rook):
             self.castle(castle)
-        elif self.is_available(move, True):
+        elif self.is_occupied(move, True):
             Piece.board.half_moves = 0
             Piece.board[move].piece.delete()
         del Piece.board[self.pos]
@@ -255,7 +255,7 @@ class King(Piece):
         return moves
 
     def can_move(self, move:str) -> bool:
-        if len(move) == 2 and not self.is_available(move):
+        if len(move) == 2 and not self.is_occupied(move):
             if self.can_move_straight(move, True) or self.can_move_diagonally(move, True):
                 return True
             castle = self.can_castle()
@@ -291,34 +291,45 @@ class King(Piece):
         queenside = None
         if self.moved or Square[self.pos].is_attacked():
             return None, None
-        # for piece in self.board.pieces:
-        #     if piece.type == "R" and piece.color == self.color and not piece.moved:
-        #         if self.castle_route(-1) or self.castle_route(1):
-        #             if piece.pos[0] > self.pos[0] and self.k:
-        #                 kingside = piece
-        #                 piece.kingside = None
-        #             elif self.q:
-        #                 queenside = piece
-        #                 piece.queenside = None
+        for piece in self.board.pieces:
+            if piece.type == "R" and piece.color == self.color and not piece.moved:
+                if self.castle_route(piece.pos):
+                    if piece.pos[0] > self.pos[0] and self.k:
+                        kingside = piece
+                        piece.kingside = None
+                    elif self.q:
+                        queenside = piece
+                        piece.queenside = None
 
         return kingside, queenside
 
-    def castle_route(self, side:int) -> bool:
+    def castle_route(self, rook:Rook) -> bool:
         """Checks if the path is clear and checkless for castling
 
         Args:
-            side (int): side the king wants to castle, 1 or -1
+            rook (int): Position of the rook with which the king will castle
 
         Returns:
             bool: If the king can castle or not
         """
-        move = chr(ord(self.pos[0])+side)
-        if self.is_available(move+self.pos[1]):
-            return False
-        step = abs(ord(move) - ord(self.pos[0]))//(ord(move) - ord(self.pos[0]))
-        for file in range(ord(self.pos[0])+step, ord(move[0]), step):
-            if Piece.board[f'{chr(file)}{move[1]}'].piece is not None:
+
+        if rook[0] > self.pos[0] and self.k:
+            if (self.is_occupied(self.CASTLING[self.color])
+                or self.is_occupied(self.CASTLED_ROOK[self.color])
+            ):
                 return False
+            side = 1
+        elif self.q:
+            if(self.is_occupied(self.CASTLING[self.color+2])
+                or self.is_occupied(self.CASTLED_ROOK[self.color+2])
+            ):
+                return False
+            side = -1
+        else:
+            return False
+
+        
+
             # if Square[f'{chr(file)}{move[1]}'].is_attacked():
             #     return False
         return True
@@ -345,7 +356,7 @@ class Rook(Piece):
     def move(self, move:str) -> None:
         if not self.can_move(move):
             raise IllegalMoveError(self, move)
-        if self.is_available(move, True):
+        if self.is_occupied(move, True):
             Piece.board.half_moves = 0
             Piece.board.pieces.remove(Piece.board[move].piece)
             del Piece.board[move]
@@ -378,7 +389,7 @@ class Bishop(Piece):
     def move(self, move:str) -> None:
         if not self.can_move(move):
             raise IllegalMoveError(self, move)
-        if self.is_available(move, True):
+        if self.is_occupied(move, True):
             Piece.board.half_moves = 0
             Piece.board.pieces.remove(Piece.board[move].piece)
             del Piece.board[move]
@@ -413,7 +424,7 @@ class Queen(Piece):
     def move(self, move:str) -> None:
         if not self.can_move(move):
             raise IllegalMoveError(self, move)
-        if self.is_available(move, True):
+        if self.is_occupied(move, True):
             Piece.board.half_moves = 0
             Piece.board.pieces.remove(Piece.board[move].piece)
             del Piece.board[move]
@@ -445,7 +456,7 @@ class Knight(Piece):
     def move(self, move:str) -> None:
         if not self.can_move(move):
             raise IllegalMoveError(self, move)
-        if self.is_available(move, True):
+        if self.is_occupied(move, True):
             Piece.board.half_moves = 0
             Piece.board[move].piece.delete()
         del Piece.board[self.pos]
@@ -453,7 +464,7 @@ class Knight(Piece):
         Piece.board[move].piece = self
 
     def can_move(self, move:str) -> bool:
-        if len(move) == 2 and not self.is_available(move):
+        if len(move) == 2 and not self.is_occupied(move):
             if abs(ord(self.pos[0]) - ord(move[0])) == 2:
                 return abs(int(self.pos[1]) - int(move[1])) == 1
             elif abs(ord(self.pos[0]) - ord(move[0])) == 1:
@@ -608,7 +619,7 @@ class Pawn(Piece):
                     return True, f"{self.pos[0]}3"
             return False
         b = self.can_move_diagonally(move, True, True)
-        if self.is_available(move, True):
+        if self.is_occupied(move, True):
             if not self.can_move_diagonally(move, True):
                 return False
             return (bool((b and not self.color) or (not b and self.color)), 
@@ -746,9 +757,6 @@ class Board:
     Args:
         fen (str, optional): starting FEN. Defaults to the standard starting FEN.
         format_ (str, optional): Time format. Defaults to "5+0".
-
-    Raises:
-        ValueError: [description]
     """
 
     starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
