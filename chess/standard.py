@@ -7,11 +7,16 @@ import pprint
 from abc import ABC, abstractmethod
 from threading import Thread
 from time import sleep
-from copy import deepcopy
 
 
 class Piece(ABC):
-    """A chess piece"""
+    """A chess piece
+
+        Args:
+            color (int): Color of the piece (0 for white, 1 for black)
+            pos (str): position of the piece
+    """
+
     type_:str = ""
     board:Board = None
 
@@ -19,35 +24,55 @@ class Piece(ABC):
         self.color = color  # 0(white) or 1(black)
         self.pos = pos
         self.type:str = self.type_
-        # self.img = f"{'w' if self.color else 'b'}{self.__class__.__name__.lower()}.png"
-        # super().__init__(ord(pos[0])-97, int(pos[1])-1, self.img)
 
     def __str__(self) -> str:
-        # if self.color:
-        #     return '\033[0;30m' + self.type.lower() + '\033[0m'
-        # return '\033[0;31m' + self.type.upper() + '\033[0m'
         if self.color:
             return self.type.lower()
         return self.type.upper()
 
     @abstractmethod
     def move(self, move:str) -> None:
-        """Moving the piece"""
+        """Moves the piece to the given square
+
+        Args:
+            move (str): destination square
+        
+        Raises:
+            ValueError: If the square passed is not valid
+        """
 
     @abstractmethod
     def can_move(self, move:str) -> bool:
-        """Returns if the piece can be move to that square"""
+        """Checks if the piece can move to the given square
+
+        Args:
+            move (str): The square
+
+        Returns:
+            bool: If the piece can move to that square
+        """
 
     @abstractmethod
     def get_moves(self) -> list[str]:
-        """Returns the list of possible moves for the piece"""
+        """Gets a list of all the moves for the pieces
+
+        Returns:
+            list[str]: list of all of the piece's moves
+        """
 
     def can_move_diagonally(self, move:str, one:bool=False, dir_:bool|None=None) -> bool:
+        """Checks if the piece can move diagonally to the given square
+
+        Args:
+            move (str): The square
+            one (bool): if the piece can only move 1 square (defaults to False)
+            dir_ (bool|None): if the piece can only move forward 1 square in the given 
+            direction (defaults to None)
+
+        Returns:
+            bool: If the piece can move diagonally to that square
         """
-        Returns a bool if the piece can move diagonally to the given square
-        :param one: if the piece can only move 1 square
-        :param forward: if the piece can only move forward 1 square
-        """
+
         cond = abs(ord(self.pos[0]) - ord(move[0])) == abs(int(self.pos[1]) - int(move[1]))
         if not cond or self.is_available(move):
             return False
@@ -69,10 +94,16 @@ class Piece(ABC):
         return True
 
     def can_move_straight(self, move:str, one:bool=False) -> bool:
+        """Checks if the piece can move straight to the given square
+
+        Args:
+            move (str): The square
+            one (bool): if the piece can only move 1 square (defaults to False)
+
+        Returns:
+            bool: If the piece can move straight to that square
         """
-        Returns a bool if the piece can move straight to the given square
-        :param one: if the piece can only move 1 square
-        """
+
         cond = (move[0] == self.pos[0]) != (move[1] == self.pos[1])
         if not cond or self.is_available(move):
             return False
@@ -91,21 +122,34 @@ class Piece(ABC):
         return False
 
     def is_available(self, square:str, opponent:bool=False) -> bool:
+        """Checks if the square is occupied by another of your own piece
+
+        Args:
+            move (str): The square
+            opponent (bool): returns True if square is occupied by an opponent piece
+            (defaults to False)
+
+        Returns:
+            bool: If the square is occupied
         """
-        Returns a bool if the square is occupied by another of your own piece
-        :param opponent: returns True if square is occupied by an opponent piece
-        """
+
         piece = Piece.board[square].piece
         if opponent:
             return piece and piece.color != self.color
         return piece and piece.color == self.color
 
     def delete(self) -> None:
+        """Deletes the piece"""
         Piece.board[self.pos].piece = None
         Piece.board.pieces.remove(self)
         del self
 
     def get_diagonal_moves(self) -> list[str]:
+        """Gets all of the piece's diagonal moves
+
+        Returns:
+            list[str]: a list of all of the piece's diagonal moves'
+        """
         moves = []
         m = chr(ord(self.pos[0])+1)+str(int(self.pos[1])+1)
         while check_UCI(self.pos+m) and self.can_move(m):
@@ -126,6 +170,11 @@ class Piece(ABC):
         return moves
 
     def get_straight_moves(self) -> list[str]:
+        """Gets all of the piece's straight moves
+
+        Returns:
+            list[str]: a list of all of the piece's straight moves'
+        """
         moves = []
         m = chr(ord(self.pos[0])+1)
         while check_UCI(self.pos+m+self.pos[1]) and self.can_move(m+self.pos[1]):
