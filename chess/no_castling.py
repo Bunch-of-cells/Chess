@@ -1,4 +1,4 @@
-"""Contains the code for the Three Check variant"""
+"""Contains the code for the No Castling variant"""
 
 from chess import standard as std
 

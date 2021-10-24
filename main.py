@@ -1,4 +1,4 @@
-from chess import standard as std, torpedo as tc
+from chess import standard as std, king_of_the_hill as tc
 
 
 def main() -> None:
