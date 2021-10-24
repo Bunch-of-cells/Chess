@@ -1,9 +1,9 @@
-from chess import standard as std, king_of_the_hill as tc
+from chess import standard as std, racing_kings as tc
 
 
 def main() -> None:
     # b = std.Board(std.generate_chess960_pieces() + " w - - 0 1", "0.05+0")
-    b = tc.Board("8/8/P7/K7/8/k7/8/8 w KQkq - 0 3")
+    b = tc.Board()
 
     while True:
         m = input("::>><<:: ")
