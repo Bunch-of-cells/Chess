@@ -122,13 +122,14 @@ class Piece(ABC):
                 for rank in range(int(self.pos[1])+step, int(move[1]), step))
         return False
 
-    def is_occupied(self, square:str, opponent:bool=False) -> bool:
+    def is_occupied(self, square:str, opponent:bool=False, both:bool=False) -> bool:
         """Checks if the square is occupied by another of your own piece
 
         Args:
             move (str): The square
             opponent (bool): returns True if square is occupied by an opponent piece.
             Defaults to False.
+            both (bool): returns if the square is occupied by any piece. Defaults to False.
 
         Returns:
             bool: If the square is occupied
@@ -137,6 +138,8 @@ class Piece(ABC):
         piece = Piece.board[square].piece
         if opponent:
             return piece and piece.color != self.color
+        if both:
+            return bool(piece)
         return piece and piece.color == self.color
 
     def delete(self) -> None:
@@ -605,6 +608,8 @@ class Pawn(Piece):
 
     def can_move(self, move:str
             ) -> tuple[bool, None|Piece|str|bool]|tuple[bool, None|Piece, bool]|bool:
+        if self.is_occupied(move):
+            return False
         if self.pos[0] == move[0]:
             match int(self.pos[1]) - int(move[1]):
                 case 1 if self.color:
@@ -616,8 +621,12 @@ class Pawn(Piece):
                         return True, True
                     return True
                 case 2 if self.color and self.pos[1] == "7":
+                    if self.is_occupied(f"{self.pos[0]}6"):
+                        return False
                     return True, f"{self.pos[0]}6"
                 case -2 if not self.color and self.pos[1] == "2":
+                    if self.is_occupied(f"{self.pos[0]}3"):
+                        return False
                     return True, f"{self.pos[0]}3"
             return False
         b = self.can_move_diagonally(move, True, True)
@@ -631,6 +640,14 @@ class Pawn(Piece):
                 return False
             return (bool((b and not self.color) or (not b and self.color)),
                     Piece.board[f"{move[0]}{int(move[1]) + (1 if move[1] == '3' else -1)}"].piece)
+        return False
+
+    def can_capture(self, move:str) -> bool:
+        b = self.can_move_diagonally(move, True, True)
+        if self.is_occupied(move, True) or Piece.board.en_passant == move:
+            if not self.can_move_diagonally(move, True):
+                return False
+            return bool((b and not self.color) or (not b and self.color))
         return False
 
 
@@ -662,7 +679,11 @@ class Square(metaclass=SquareMeta):
     def is_attacked(self, color:int=None) -> bool:
         """Returns a bool if the square is attacked by an enemy piece"""
         for piece in Piece.board.pieces:
-            if (piece.color != (self.piece.color if self.piece else color)
+            if isinstance(piece, Pawn):
+                if (piece.color != (self.piece.color if self.piece else color)
+                    and piece.can_capture(f"{chr(self.pos[0]+97)}{self.pos[1]+1}")):
+                    return True
+            elif (piece.color != (self.piece.color if self.piece else color)
                 and piece.type != "K"  # Important idk why to avoid recursion
                 and piece.can_move(f"{chr(self.pos[0]+97)}{self.pos[1]+1}")
             ):
@@ -738,7 +759,7 @@ class Clock:
             self.ticking = False
             sleep(self.sleep)
             self.ticking = True
-            Thread(target=self.tick, args=(attr,)).start()
+            Thread(target=self.tick, args=(attr,), daemon=True).start()
 
     def stop(self) -> None:
         """Stops the clock"""
@@ -1048,7 +1069,7 @@ class Board:
             msg = "Threefold repetition"
         elif self.is_insufficient_material()[2]:
             msg = "Insufficient material"
-        elif msg:
+        if msg:
             self.clock.stop()
             print(msg)
             exit()

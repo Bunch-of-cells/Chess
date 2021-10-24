@@ -69,7 +69,7 @@ class Board(std.Board):
             msg = "Threefold repetition"
         elif self.is_insufficient_material()[2]:
             msg = "Insufficient material"
-        elif msg:
+        if msg:
             self.clock.stop()
             print(msg)
             exit()

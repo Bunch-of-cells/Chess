@@ -1,9 +1,9 @@
-from chess import standard as std, no_castling as tc
+from chess import standard as std, torpedo as tc
 
 
 def main() -> None:
     # b = std.Board(std.generate_chess960_pieces() + " w - - 0 1", "0.05+0")
-    b = tc.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w - 0 1")
+    b = tc.Board("8/8/P7/K7/8/k7/8/8 w KQkq - 0 3")
 
     while True:
         m = input("::>><<:: ")
@@ -12,6 +12,8 @@ def main() -> None:
         elif m == "show":
             b.print_board()
             print(b.clock.time())
+        elif m == "pieces":
+            print(b.pieces)
         elif m == "fen":
             print(b.generate_fen())
         elif m == "abort":
