@@ -1,11 +1,12 @@
 from chess import standard as std, three_check as tc, no_castling as nc, torpedo as tp, \
-    king_of_the_hill as koth, racing_kings as rk
+    king_of_the_hill as koth, racing_kings as rk, antichess as ac
 
 
 class Standard(std.Board): pass
 class ThreeCheck(tc.Board): pass
 class NoCastling(nc.Board): pass
 class Torpedo(tp.Board): pass
+class AntiChess(ac.Board): pass
 class KingOfTheHill(koth.Board): pass
 class RacingKings(rk.Board): pass
 class FromPosition(std.Board):pass

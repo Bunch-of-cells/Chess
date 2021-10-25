@@ -2,7 +2,7 @@ from chess import *
 
 
 def main() -> None:
-    b = Chess960()
+    b = AntiChess()
 
     while True:
         m = input("::>><<:: ")

@@ -653,7 +653,7 @@ class Pawn(Piece):
 
 class SquareMeta(type):
     """Metaclass for the square class"""
-    squares = {}
+    squares:dict[str, Square] = {}
     def __call__(cls, pos):
         obj = super().__call__(pos)
         SquareMeta.squares[f"{chr(pos[0]+97)}{pos[1]+1}"] = obj
