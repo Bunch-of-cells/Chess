@@ -2,7 +2,7 @@ from chess import *
 
 
 def main() -> None:
-    b = AntiChess()
+    b = Horde()
 
     while True:
         m = input("::>><<:: ")
