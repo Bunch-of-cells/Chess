@@ -790,6 +790,7 @@ class Board:
         Piece.board = self
         self.moves:list[str] = []
         self.filter_moves = []
+        self.g_moves = []
         self.prev = None
         self.move_fen:list[str] = []
         self.printer = PrettyPrinter(indent=4).pprint
@@ -993,10 +994,14 @@ class Board:
 
     def get_moves(self) -> list[str]:
         """Gets a list of all the moves without filtering checks"""
+        if self.g_moves:
+            if self.g_moves[0] == [self.turn, self.full_moves]:
+                return self.g_moves[1]
         moves = []
         for piece in self.pieces:
             if piece.color == self.turn:
                 moves.extend(map(lambda n: piece.pos+n, piece.get_moves()))
+        self.g_moves = [[self.turn, self.full_moves], moves]
         return moves
 
     def filter_checks(self, moves:list[str]) -> list[str]:

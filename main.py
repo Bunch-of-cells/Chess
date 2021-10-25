@@ -3,7 +3,7 @@ from chess import standard as std, racing_kings as tc
 
 def main() -> None:
     # b = std.Board(std.generate_chess960_pieces() + " w - - 0 1", "0.05+0")
-    b = tc.Board("k7/6K1/8/8/8/8/1rNnNBR1/qrbn1BRQ w - - 1 7")
+    b = std.Board("k7/6K1/8/8/8/8/1rNnNBR1/qrbn1BRQ w - - 1 7")
 
     while True:
         m = input("::>><<:: ")
