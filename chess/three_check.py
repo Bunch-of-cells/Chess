@@ -58,8 +58,7 @@ class Board(std.Board):
             msg = "Three Checks, white lost"
         elif self.bking.checks >= self.bking.max_checks:
             msg = "Three Checks, black lost"
-        moves = self.get_moves()
-        if not moves:
+        elif not (moves := self.get_moves()):
             msg = "Stalemate"
         elif not self.filter_checks(moves):
             msg = "Checkmate"

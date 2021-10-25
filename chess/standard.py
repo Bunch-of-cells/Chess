@@ -789,6 +789,7 @@ class Board:
             fen = self.starting_fen
         Piece.board = self
         self.moves:list[str] = []
+        self.filter_moves = []
         self.prev = None
         self.move_fen:list[str] = []
         self.printer = PrettyPrinter(indent=4).pprint
@@ -1007,12 +1008,16 @@ class Board:
         Returns:
             list[str]: Filtered list of moves
         """
+        if self.filter_moves:
+            if self.filter_moves[0] == [self.turn, self.full_moves]:
+                return self.filter_moves[1]
         filtered = []
         for move in moves:
             self._old_play(move)
             if not Square[self.wking.pos if self.turn else self.bking.pos].is_attacked():
                 filtered.append(move)
             self.reverse()
+        self.filter_moves = [[self.turn, self.full_moves], filtered]
         return filtered
 
     def reverse(self) -> None:
@@ -1058,8 +1063,7 @@ class Board:
             if self.is_insufficient_material()[self.turn]:
                 msg = "Draw by Time out"
             msg = "Time out!"
-        moves = self.get_moves()
-        if not moves:
+        elif not (moves := self.get_moves()):
             msg = "Stalemate"
         elif not self.filter_checks(moves):
             msg = "Checkmate"

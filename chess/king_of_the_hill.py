@@ -16,11 +16,10 @@ class Board(std.Board):
         if self.clock.is_up():
             msg = "Time out!"
         elif self.wking.pos in ('e4', 'd4', 'e5', 'd5'):
-            print("King of the Hill, white won")
+            msg = "King of the Hill, white won"
         elif self.bking.pos in ('e4', 'd4', 'e5', 'd5'):
-            print("King of the Hill, black won")
-        moves = self.get_moves()
-        if not moves:
+            msg = "King of the Hill, black won"
+        elif not (moves := self.get_moves()):
             msg = "Stalemate"
         elif not self.filter_checks(moves):
             msg = "Checkmate"
