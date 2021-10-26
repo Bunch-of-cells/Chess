@@ -6,7 +6,7 @@ from chess import standard as std
 class Pawn(std.Pawn):
     def can_move(self, move:str
             ) -> tuple[bool, None|std.Piece|str|bool]|tuple[bool, None|std.Piece, bool]|bool:
-        if self.is_occupied(move):
+        if self.is_occupied(move, both=True):
             return False
         if self.pos[0] == move[0]:
             match int(self.pos[1]) - int(move[1]):
@@ -19,19 +19,19 @@ class Pawn(std.Pawn):
                         return True, True
                     return True
                 case 2 if self.color and self.pos[1] == "7":
-                    if self.is_occupied(f"{self.pos[0]}6"):
+                    if self.is_occupied(f"{self.pos[0]}6", both=True):
                         return False
                     return True, f"{self.pos[0]}6"
                 case 2 if self.color and self.pos[1] == "8":
-                    if self.is_occupied(f"{self.pos[0]}7"):
+                    if self.is_occupied(f"{self.pos[0]}7", both=True):
                         return False
                     return True
                 case -2 if not self.color and self.pos[1] == "2":
-                    if self.is_occupied(f"{self.pos[0]}3"):
+                    if self.is_occupied(f"{self.pos[0]}3", both=True):
                         return False
                     return True, f"{self.pos[0]}3"
                 case -2 if not self.color and self.pos[1] == "1":
-                    if self.is_occupied(f"{self.pos[0]}2"):
+                    if self.is_occupied(f"{self.pos[0]}2", both=True):
                         return False
                     return True
             return False
@@ -58,7 +58,7 @@ class Board(std.Board):
         format_ (str, optional): Time format. Defaults to "5+0".
     """
 
-    starting_fen = "rnbqkbnr/pppppppp/8/1PP2PP1/8/8/8/8 w kq - 0 1"
+    starting_fen = "rnbqkbnr/pppppppp/P7/8/8/8/8/8 b kq - 0 1"
 
     def __init__(self, format_:str="5+0") -> None:
         super().__init__("", format_)
@@ -166,7 +166,7 @@ class Board(std.Board):
             else:
                 msg = "Time out!"
         elif not (moves := self.get_moves()):
-            if not self.turn:
+            if all(piece.color == 1 for piece in self.pieces):
                 msg = "Horde was destroyed"
             else:
                 msg = "Stalemate"

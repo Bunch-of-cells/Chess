@@ -608,7 +608,7 @@ class Pawn(Piece):
 
     def can_move(self, move:str
             ) -> tuple[bool, None|Piece|str|bool]|tuple[bool, None|Piece, bool]|bool:
-        if self.is_occupied(move):
+        if self.is_occupied(move, both=True):
             return False
         if self.pos[0] == move[0]:
             match int(self.pos[1]) - int(move[1]):
@@ -621,11 +621,11 @@ class Pawn(Piece):
                         return True, True
                     return True
                 case 2 if self.color and self.pos[1] == "7":
-                    if self.is_occupied(f"{self.pos[0]}6"):
+                    if self.is_occupied(f"{self.pos[0]}6", both=True):
                         return False
                     return True, f"{self.pos[0]}6"
                 case -2 if not self.color and self.pos[1] == "2":
-                    if self.is_occupied(f"{self.pos[0]}3"):
+                    if self.is_occupied(f"{self.pos[0]}3", both=True):
                         return False
                     return True, f"{self.pos[0]}3"
             return False
