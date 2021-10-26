@@ -22,10 +22,18 @@ class Pawn(std.Pawn):
                     if self.is_occupied(f"{self.pos[0]}6"):
                         return False
                     return True, f"{self.pos[0]}6"
+                case 2 if self.color and self.pos[1] == "8":
+                    if self.is_occupied(f"{self.pos[0]}7"):
+                        return False
+                    return True
                 case -2 if not self.color and self.pos[1] == "2":
                     if self.is_occupied(f"{self.pos[0]}3"):
                         return False
                     return True, f"{self.pos[0]}3"
+                case -2 if not self.color and self.pos[1] == "1":
+                    if self.is_occupied(f"{self.pos[0]}2"):
+                        return False
+                    return True
             return False
         b = self.can_move_diagonally(move, True, True)
         if self.is_occupied(move, True):
@@ -50,7 +58,40 @@ class Board(std.Board):
         format_ (str, optional): Time format. Defaults to "5+0".
     """
 
-    starting_fen = "rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w kq - 0 1"
+    starting_fen = "rnbqkbnr/pppppppp/8/1PP2PP1/8/8/8/8 w kq - 0 1"
+
+    def __init__(self, format_:str="5+0") -> None:
+        super().__init__("", format_)
+
+    def make_board(self, fen:str) -> None:
+        """Makes the board
+
+        Args:
+            fen (str): FEN for the board
+        """
+        self.pieces:list[std.Piece] = []
+        self.king:std.King = None
+        self.board = [[std.Square((i, j)) for i in range(8)] for j in range(8)]
+        parts = fen.split()
+        self.turn = 0 if parts[1] == "w" else 1
+        self.en_passant = None if parts[3] == "-" else parts[3]
+        self.half_moves = int(parts[4])
+        self.full_moves = int(parts[5])
+        self.make_pieces(parts[0])
+        self.king.q = False
+        self.king.k = False
+
+        if parts[2] == "-":
+            self.king.moved = True
+        else:
+            for string in parts[2]:
+                match string:
+                    case "k":
+                        self.king.k = True
+                    case "q":
+                        self.king.q = True
+                    case _:
+                        raise ValueError("Illegal FEN")
 
     def filter_checks(self, moves:list[str]) -> list[str]:
         """Filters the moves to remove checks
@@ -100,7 +141,9 @@ class Board(std.Board):
                     case "q":
                         piece = std.Queen(1, current[::-1])
                     case "p":
-                        piece = Pawn(1, current[::-1])
+                        piece = std.Pawn(1, current[::-1])
+                    case "P":
+                        piece = Pawn(0, current[::-1])
                     case "k":
                         if self.king:
                             raise ValueError("More than 1 Black King")
@@ -118,11 +161,15 @@ class Board(std.Board):
         """Ends the game if the game is over"""
         msg = ""
         if self.clock.is_up():
-            if self.is_insufficient_material()[self.turn]:
+            if self.is_insufficient_material()[self.turn] and self.turn:
                 msg = "Draw by Time out"
-            msg = "Time out!"
+            else:
+                msg = "Time out!"
         elif not (moves := self.get_moves()):
-            msg = "Stalemate"
+            if not self.turn:
+                msg = "Horde was destroyed"
+            else:
+                msg = "Stalemate"
         elif not self.filter_checks(moves):
             msg = "Checkmate"
         elif self.half_moves >= 100:
@@ -147,12 +194,12 @@ class Board(std.Board):
         wins, bins, draw = False, False, False
         bb, wb = False, False
         for piece in self.pieces:
-            if piece.color and piece is not self.bking:
+            if piece.color and piece is not self.king:
                 if piece.type in "BN":
                     black.append(piece)
                 else:
                     bb = True
-            elif piece is not self.wking and not piece.color:
+            elif not piece.color:
                 if piece.type in "BN":
                     white.append(piece)
                 else:
@@ -222,7 +269,7 @@ class Board(std.Board):
                 if piece.color:
                     if piece.pos[0] > self.king.pos[0] and self.king.k and king is not None:
                         king = "k"
-                    elif self.bking.q and queen is not None:
+                    elif self.king.q and queen is not None:
                         queen = "q"
 
         return "".join(list(filter(None, (king, queen)))) or "-"
