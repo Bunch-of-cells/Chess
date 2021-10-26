@@ -12,10 +12,7 @@ class King(std.King):
     """
 
     def can_move(self, move:str) -> bool:
-        if len(move) == 2 and not self.is_occupied(move):
-            if self.can_move_straight(move, True) or self.can_move_diagonally(move, True):
-                return True
-        return False
+        return self.can_capture(move)
 
     def get_moves(self) -> list[str]:
         moves = []

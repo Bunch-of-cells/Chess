@@ -198,6 +198,9 @@ class Piece(ABC):
             m = str(int(m)-1)
         return moves
 
+    def can_capture(self, move:str) -> bool:
+        return self.can_move(move)
+
 
 class IllegalMoveError(Exception):
     """Error raised when an illegal move is played"""
@@ -267,6 +270,12 @@ class King(Piece):
                 return castle[0]
             elif move in self.CASTLING[2:]:
                 return castle[1]
+
+    def can_capture(self, move:str) -> bool:
+        if len(move) == 2 and not self.is_occupied(move):
+            if self.can_move_straight(move, True) or self.can_move_diagonally(move, True):
+                return True
+        return False
 
     def castle(self, piece:Rook) -> None:
         """Castles the king"""
@@ -679,13 +688,8 @@ class Square(metaclass=SquareMeta):
     def is_attacked(self, color:int=None) -> bool:
         """Returns a bool if the square is attacked by an enemy piece"""
         for piece in Piece.board.pieces:
-            if isinstance(piece, Pawn):
-                if (piece.color != (self.piece.color if self.piece else color)
-                    and piece.can_capture(f"{chr(self.pos[0]+97)}{self.pos[1]+1}")):
-                    return True
-            elif (piece.color != (self.piece.color if self.piece else color)
-                and piece.type != "K"  # Important idk why to avoid recursion
-                and piece.can_move(f"{chr(self.pos[0]+97)}{self.pos[1]+1}")
+            if (piece.color != (self.piece.color if self.piece else color)
+                and piece.can_capture(f"{chr(self.pos[0]+97)}{self.pos[1]+1}")
             ):
                 return True
         return False

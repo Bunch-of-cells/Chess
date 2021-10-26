@@ -58,7 +58,7 @@ class Board(std.Board):
         format_ (str, optional): Time format. Defaults to "5+0".
     """
 
-    starting_fen = "rnbqkbnr/pppppppp/P7/8/8/8/8/8 b kq - 0 1"
+    starting_fen = "rnbqkbnr/pppppppp/8/1PP2PP1/PPPPPPPP/PPPPPPPP/PPPPPPPP/PPPPPPPP w kq - 0 1"
 
     def __init__(self, format_:str="5+0") -> None:
         super().__init__("", format_)
