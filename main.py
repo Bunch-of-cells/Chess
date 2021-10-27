@@ -2,7 +2,7 @@ from chess import *
 
 
 def main() -> None:
-    b = FromPosition("8/8/3k4/8/3K4/8/8/R7 w - - 0 1")
+    b = CrazyHouse()
 
     while True:
         m = input("::>><<:: ")

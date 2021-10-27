@@ -96,6 +96,8 @@ class Pawn(std.Pawn):
             tuple[bool, bool]|tuple[bool, std.Piece|str, bool]|bool:
         if self.is_occupied(move):
             return False
+        if self.is_occupied(move, True) and not self.can_capture(move):
+            return False
         if self.pos[0] == move[0]:
             match int(self.pos[1]) - int(move[1]):
                 case 1 if self.color:

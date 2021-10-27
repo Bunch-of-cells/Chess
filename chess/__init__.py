@@ -1,5 +1,6 @@
 from chess import standard as std, three_check as tc, no_castling as nc, torpedo as tp, \
-    king_of_the_hill as koth, racing_kings as rk, antichess as ac, horde as hd
+    king_of_the_hill as koth, racing_kings as rk, antichess as ac, horde as hd, \
+    crazyhouse as ch
 
 
 class Standard(std.Board): pass
@@ -11,6 +12,7 @@ class KingOfTheHill(koth.Board): pass
 class RacingKings(rk.Board): pass
 class Horde(hd.Board): pass
 class FromPosition(std.Board):pass
+class CrazyHouse(ch.Board):pass
 
 
 class Chess960(std.Board):

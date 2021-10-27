@@ -144,9 +144,8 @@ class Piece(ABC):
 
     def delete(self) -> None:
         """Deletes the piece"""
-        Piece.board[self.pos].piece = None
+        del Piece.board[self.pos]
         Piece.board.pieces.remove(self)
-        del self
 
     def get_diagonal_moves(self) -> list[str]:
         """Gets all of the piece's diagonal moves
@@ -372,8 +371,7 @@ class Rook(Piece):
             raise IllegalMoveError(self, move)
         if self.is_occupied(move, True):
             Piece.board.half_moves = 0
-            Piece.board.pieces.remove(Piece.board[move].piece)
-            del Piece.board[move]
+            Piece.board[move].piece.delete()
         del Piece.board[self.pos]
         self.pos = move
         Piece.board[move].piece = self
@@ -405,8 +403,7 @@ class Bishop(Piece):
             raise IllegalMoveError(self, move)
         if self.is_occupied(move, True):
             Piece.board.half_moves = 0
-            Piece.board.pieces.remove(Piece.board[move].piece)
-            del Piece.board[move]
+            Piece.board[move].piece.delete()
         del Piece.board[self.pos]
         self.pos = move
         Piece.board[move].piece = self
@@ -440,8 +437,7 @@ class Queen(Piece):
             raise IllegalMoveError(self, move)
         if self.is_occupied(move, True):
             Piece.board.half_moves = 0
-            Piece.board.pieces.remove(Piece.board[move].piece)
-            del Piece.board[move]
+            Piece.board[move].piece.delete()
         del Piece.board[self.pos]
         self.pos = move
         Piece.board[move].piece = self
@@ -559,16 +555,13 @@ class Pawn(Piece):
                 Piece.board[move].piece = self
             case (True, Piece() as piece):
                 del Piece.board[self.pos]
-                del Piece.board[piece.pos]
+                Piece.board[move].piece.delete()
                 self.pos = move
                 Piece.board[self.pos].piece = self
-                Piece.board.pieces.remove(piece)
 
             case (True, Piece() as piece, True):
-                del Piece.board[self.pos]
-                Piece.board.pieces.remove(piece)
-                del Piece.board[piece.pos]
-                Piece.board.pieces.remove(self)
+                self.delete()
+                piece.delete()
                 match move[2]:
                     case "q":
                         p = Queen(self.color, (ord(move[0])-97, int(move[1])-1))
@@ -580,14 +573,12 @@ class Pawn(Piece):
                         p = Bishop(self.color, (ord(move[0])-97, int(move[1])-1))
                 Piece.board[move].piece = p
                 Piece.board.pieces.append(p)
-                del self
 
             case (True, Piece() as piece, False):
                 del Piece.board[self.pos]
-                del Piece.board[piece.pos]
+                piece.delete()
                 self.pos = move
                 Piece.board[self.pos].piece = self
-                Piece.board.pieces.remove(piece)
 
             case(True, True):
                 del Piece.board[self.pos]
@@ -617,7 +608,9 @@ class Pawn(Piece):
 
     def can_move(self, move:str
             ) -> tuple[bool, None|Piece|str|bool]|tuple[bool, None|Piece, bool]|bool:
-        if self.is_occupied(move, both=True):
+        if self.is_occupied(move):
+            return False
+        if self.is_occupied(move, True) and not self.can_capture(move):
             return False
         if self.pos[0] == move[0]:
             match int(self.pos[1]) - int(move[1]):

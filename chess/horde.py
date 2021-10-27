@@ -6,7 +6,9 @@ from chess import standard as std
 class Pawn(std.Pawn):
     def can_move(self, move:str
             ) -> tuple[bool, None|std.Piece|str|bool]|tuple[bool, None|std.Piece, bool]|bool:
-        if self.is_occupied(move, both=True):
+        if self.is_occupied(move):
+            return False
+        if self.is_occupied(move, True) and not self.can_capture(move):
             return False
         if self.pos[0] == move[0]:
             match int(self.pos[1]) - int(move[1]):
