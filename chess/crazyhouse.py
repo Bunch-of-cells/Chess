@@ -7,18 +7,23 @@ class Piece:
     def delete(self) -> None:
         """Deletes the piece"""
         del std.Piece.board[self.pos]
-        if self in std.Piece.board.pieces:
-            std.Piece.board.pieces.remove(self)
-        elif self in std.Piece.board.wpocket:
-            std.Piece.board.wpocket.remove(self)
-        elif self in std.Piece.board.bpocket:
-            std.Piece.board.bpocket.remove(self)
+        std.Piece.board.pieces.remove(self)
+        if std.Piece.board.turn:
+            self.color = 0
+            std.Piece.board.bpocket.append(self)
+        else:
+            self.color = 1
+            std.Piece.board.wpocket.append(self)
 
     def place(self, pos):
         for no, square in std.SquareMeta.squares.items():
             if no == pos:
                 square.piece = self
                 self.pos = no
+                if std.Piece.board.turn:
+                    std.Piece.board.bpocket.remove(self)
+                else:
+                    std.Piece.board.wpocket.remove(self)
                 std.Piece.board.pieces.append(self)
                 break
 
@@ -343,18 +348,6 @@ class Board(std.Board):
             print(msg)
             exit()
 
-    def __getitem__(self, index:str) -> std.Square:
-        # if not check_UCI(index):
-        #     return None
-        return self.board[int(index[1])-1][ord(index[0])-97]
-
-    def __setitem__(self, index:str, value:std.Piece) -> None:
-        # if not check_UCI(index):
-        #     return None
-        if self.board[int(index[1])-1][ord(index[0])-97].piece is not None:
-            raise ValueError("Already a piece there")
-        self.board[int(index[1])-1][ord(index[0])-97].piece = value
-
     def __delitem__(self, index:str) -> None:
         if not check_UCI(index):
             return None
@@ -363,7 +356,6 @@ class Board(std.Board):
             self.board[int(index[1])-1][ord(index[0])-97].piece = None
         else:
             raise ValueError("No piece to remove")
-
 
 
 def check_UCI(move:str) -> bool:

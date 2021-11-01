@@ -1,6 +1,5 @@
 from chess import *
 
-
 def main() -> None:
     b = CrazyHouse()
 
@@ -11,6 +10,7 @@ def main() -> None:
         elif m == "show":
             b.print_board()
             print(b.clock.time())
+            print(b.wpocket, b.bpocket)
         elif m == "pieces":
             print(b.pieces)
         elif m == "fen":

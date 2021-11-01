@@ -678,6 +678,9 @@ class Square(metaclass=SquareMeta):
     def __repr__(self) -> str:
         return str(self.piece or " ")
 
+    def __bool__(self) -> bool:
+        return bool(self.piece)
+
     def is_attacked(self, color:int=None) -> bool:
         """Returns a bool if the square is attacked by an enemy piece"""
         for piece in Piece.board.pieces:
@@ -1021,6 +1024,9 @@ class Board:
             self.reverse()
         self.filter_moves = [[self.turn, self.full_moves], filtered]
         return filtered
+
+    def __iter__(self) -> Square:
+        return (self[file+rank] for file in "abcdefgh" for rank in "12345678")
 
     def reverse(self) -> None:
         """Reverses a played move"""

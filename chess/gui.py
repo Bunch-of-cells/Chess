@@ -1,10 +1,41 @@
-from tkinter import Label, PhotoImage, Button, SUNKEN
+from __future__ import annotations
+from tkinter import Label, PhotoImage, Button, SUNKEN, Tk, Frame
+from chess.standard import Board, Square
+
+
+class ChessGUI:
+    def __init__(self, board:Board) -> None:
+        self.board = board
+        self.root:Tk
+        self.frame:Frame
+        self.pieces:list[Piece] = []
+        self.img = PhotoImage(
+            file="/home/alumin112/Desktop/Python Projects/Chess/chess/assets/board.png")
+
+    def display(self):
+        self.root = Tk()
+        self.root.resizable(False, False)
+        Piece.root = self.root
+        self.frame = Frame(self.root)
+        self.make_board()
+        Label(self.frame, image=self.img).pack()
+        self.frame.pack()
+        self.root.mainloop()
+
+    def make_board(self, fen:str="") -> None:
+        square:Square
+        for square in self.board:
+            if not square:
+                continue
+            self.pieces.append(square)
+
 
 class Piece(Label):
     root = None
     move = None
     buttons = []
-    pieces:list["Piece"] = []
+    pieces:list[Piece] = []
+    iimg = "/home/alumin112/Desktop/Python Projects/Chess/chess/assets/{}{}.png"
 
     def __init__(self, file:int, rank:int, img:str, type_:str,**kwargs) -> None:
         self.file = file
@@ -48,10 +79,10 @@ class Piece(Label):
                     self.orgX, self.orgY = posi
                     choice = 1 if move[3] == "8" else -1
                     for val, name in enumerate(["rook", "queen", "bishop", "knight"]):
-                        img = f"/home/alumin112/Desktop/Python Projects/Chess/chess/assets/{'b' if Piece.board[move].piece.color else 'w'}{name}.png"
-                        photo = PhotoImage(file=img)
+                        photo = PhotoImage(
+                file=self.iimg.format('b' if Piece.board[move].piece.color else 'w', name))
                         button = Button(Piece.root, font=("Arial", 20), relief=SUNKEN, bd=2,
-                                    command=lambda n=name:self.radio(move, n, 
+                                    command=lambda n=name:self.radio(move, n,
                                     Piece.board[move].piece.color), image=photo)
                         button.photo = photo
                         Piece.buttons.append(button)
@@ -64,8 +95,7 @@ class Piece(Label):
         self.place(x=self.orgX, y=self.orgY)
 
     def radio(self, move:str, name:str, color:int) -> None:
-        img = f"/home/alumin112/Desktop/Python Projects/Chess/chess/assets/{'b' if color else 'w'}{name}.png"
-        self.photo = PhotoImage(file=img)
+        self.photo = PhotoImage(file=self.iimg.format('b' if color else 'w', name))
         self.config(image=self.photo)
         self.type = name[(1 if name=="knight" else 0)].upper()
         Piece.board.play(move+name[(1 if name=="knight" else 0)])
