@@ -21,9 +21,10 @@ class Piece(ABC):
     type_:str = ""
     board:Board = None
 
-    def __init__(self, color:int, pos:str) -> None:
+    def __init__(self, color:int, pos:tuple[int, int]) -> None:
+        self.pos = f"{chr(pos[0]+97)}{pos[1]+1}"
         self.color = color  # 0(white) or 1(black)
-        self.pos = pos
+        self.numpos = pos
         self.type:str = self.type_
 
     def __str__(self) -> str:
@@ -200,6 +201,11 @@ class Piece(ABC):
     def can_capture(self, move:str) -> bool:
         return self.can_move(move)
 
+    @classmethod
+    def make_piece(cls, color:int , pos:str) -> Piece:
+        pos = ord(pos[0])-97, int(pos[1])-1
+        return cls(color, pos)
+
 
 class IllegalMoveError(Exception):
     """Error raised when an illegal move is played"""
@@ -222,14 +228,13 @@ class King(Piece):
     CASTLED_ROOK = ("f1", "f8", "d1", "d8")
 
     def __init__(self, color:int, position:tuple[int, int]) -> None:
-        pos = f"{chr(position[0]+97)}{position[1]+1}"
-        if (pos[1] == "1" and not color) or (pos[1] == "8" and color):
+        if (position[1] == 0 and not color) or (position[1] == 7 and color):
             self.moved = False
         else:
             self.moved = True
         self.k = not self.moved
         self.q = not self.moved
-        super().__init__(color, pos)
+        super().__init__(color, position)
 
     def move(self, move:str) -> None:
         if not (castle := self.can_move(move)):
@@ -358,13 +363,12 @@ class Rook(Piece):
     type_ = "R"
 
     def __init__(self, color:int, position:tuple[int,int]) -> None:
-        pos = f"{chr(position[0]+97)}{position[1]+1}"
         self.moved = True
-        if pos[1] == "1" and not color:
+        if position[1] == 0 and not color:
             self.moved = False
-        elif pos[1] == "8" and color:
+        elif position[1] == 7 and color:
             self.moved = False
-        super().__init__(color, pos)
+        super().__init__(color, position)
 
     def move(self, move:str) -> None:
         if not self.can_move(move):
@@ -394,10 +398,6 @@ class Bishop(Piece):
     """
     type_ = "B"
 
-    def __init__(self, color:int, position:tuple[int,int]) -> None:
-        pos = f"{chr(position[0]+97)}{position[1]+1}"
-        super().__init__(color, pos)
-
     def move(self, move:str) -> None:
         if not self.can_move(move):
             raise IllegalMoveError(self, move)
@@ -425,13 +425,6 @@ class Queen(Piece):
     """
     type_ = "Q"
 
-    def __init__(self, color:int, position:tuple[int, int]=()) -> None:
-        if position:
-            pos = f"{chr(position[0]+97)}{position[1]+1}"
-        else:
-            pos = "d8" if color else "d1"
-        super().__init__(color, pos)
-
     def move(self, move:str) -> None:
         if not self.can_move(move):
             raise IllegalMoveError(self, move)
@@ -458,10 +451,6 @@ class Knight(Piece):
         position (tuple[int, int]): Position of the piece in a numeric form.
     """
     type_ = "N"
-
-    def __init__(self, color:int, position:tuple[int,int]) -> None:
-        pos = f"{chr(position[0]+97)}{position[1]+1}"
-        super().__init__(color, pos)
 
     def move(self, move:str) -> None:
         if not self.can_move(move):
@@ -501,10 +490,6 @@ class Pawn(Piece):
     """
     type_ = "P"
 
-    def __init__(self, color:int, position:tuple[int, int]) -> None:
-        pos = f"{chr(position[0]+97)}{position[1]+1}"
-        super().__init__(color, pos)
-    
     def get_moves(self) -> list[str]:
         moves = []
         for i in (1, 2, -1, -2):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from tkinter import Label, PhotoImage, Button, SUNKEN, Tk, Frame
-from chess.standard import Board, Square
+from chess.standard import Board, Square, Piece
 
 
 class ChessGUI:
@@ -30,17 +30,15 @@ class ChessGUI:
             self.pieces.append(square)
 
 
-class Piece(Label):
+class GuiPiece(Label):
     root = None
     move = None
     buttons = []
-    pieces:list[Piece] = []
+    pieces:list[GuiPiece] = []
     iimg = "/home/alumin112/Desktop/Python Projects/Chess/chess/assets/{}{}.png"
 
-    def __init__(self, file:int, rank:int, img:str, type_:str,**kwargs) -> None:
-        self.file = file
-        self.rank = rank
-        self.orgX = file *100
+    def __init__(self, piece:Piece,**kwargs) -> None:
+        self.orgX = piece.pos[0] *100
         self.orgY = rank *100
         self.type = type_
         img = "/home/alumin112/Desktop/Python Projects/Chess/chess/assets/" + img
